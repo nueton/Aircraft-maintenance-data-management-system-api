@@ -1,0 +1,6 @@
+{
+  "dependencies": {
+    "guid-typescript": "^1.0.9",
+    "openapi": "^1.0.1"
+  }
+}
