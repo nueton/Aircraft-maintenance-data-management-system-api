@@ -13,6 +13,6 @@ public class RepairReport
     public int RepairStatus { get; set; }
     public DateTime CreatedTimeRepair { get; set; }
     public Guid ChangeStatusUserId { get; set; }
-
+    public DateTime ChangeStatusTime { get; set; }
     public int TaskReportId { get; set; }
 }

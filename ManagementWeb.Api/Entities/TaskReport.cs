@@ -17,6 +17,7 @@ public class TaskReport
     public string Code { get; set; } = "";
     public int TaskStatus { get; set; }
     public Guid CreatedUserId { get; set; }
+    public DateTime ChangeStatusTime { get; set; }
     public Guid ChangeStatusUserId { get; set; }
     public int RepairReportId { get; set; }
 }

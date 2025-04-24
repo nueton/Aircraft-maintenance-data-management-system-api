@@ -121,6 +121,26 @@ namespace ManagementWeb.Api.Controllers
             var user = await dbContext.Users.Select(d => new { Username = d.Username, Role = d.Role, PasswordHash = d.PasswordHash }).ToListAsync();
             return Ok(user);
         }
+        [Authorize]
+        [HttpGet("allInspector")]
+        public async Task<IActionResult> getInspector(MyContext dbContext)
+        {
+            var user = await dbContext.Users.Where(d => d.Role == "Inspector").Select(d => new { UserId = d.UserId, Rank = d.Rank, Name = d.Name, Surname = d.Surname }).OrderBy(d => d.Name).ToArrayAsync();
+            return Ok(user);
+        }
+        [Authorize]
+        [HttpGet("allWorker")]
+        public async Task<IActionResult> getWorker(MyContext dbContext)
+        {
+            var user01 = await dbContext.Users.Where(d => d.Role == "user" && d.Rank == "จ.ต.").Select(d => new { UserId = d.UserId, Rank = d.Rank, Name = d.Name, Surname = d.Surname }).OrderBy(d => d.Name).ToArrayAsync();
+            var user02 = await dbContext.Users.Where(d => d.Role == "user" && d.Rank == "จ.ท.").Select(d => new { UserId = d.UserId, Rank = d.Rank, Name = d.Name, Surname = d.Surname }).OrderBy(d => d.Name).ToArrayAsync();
+            var user03 = await dbContext.Users.Where(d => d.Role == "user" && d.Rank == "จ.อ.").Select(d => new { UserId = d.UserId, Rank = d.Rank, Name = d.Name, Surname = d.Surname }).OrderBy(d => d.Name).ToArrayAsync();
+            var user04 = await dbContext.Users.Where(d => d.Role == "user" && d.Rank == "พ.อ.ต.").Select(d => new { UserId = d.UserId, Rank = d.Rank, Name = d.Name, Surname = d.Surname }).OrderBy(d => d.Name).ToArrayAsync();
+            var user05 = await dbContext.Users.Where(d => d.Role == "user" && d.Rank == "พ.อ.ท.").Select(d => new { UserId = d.UserId, Rank = d.Rank, Name = d.Name, Surname = d.Surname }).OrderBy(d => d.Name).ToArrayAsync();
+            var user06 = await dbContext.Users.Where(d => d.Role == "user" && d.Rank == "พ.อ.อ.").Select(d => new { UserId = d.UserId, Rank = d.Rank, Name = d.Name, Surname = d.Surname }).OrderBy(d => d.Name).ToArrayAsync();
 
+            var user = user01.Concat(user02).Concat(user03).Concat(user04).Concat(user05).Concat(user06).ToArray();
+            return Ok(user);
+        }
     }
 }
