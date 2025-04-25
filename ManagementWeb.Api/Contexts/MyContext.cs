@@ -9,6 +9,9 @@ public class MyContext : DbContext
     public DbSet<TaskReport> Tasks { get; set; }
     public DbSet<RepairReport> RepairReports { get; set; }
     public DbSet<User> Users { get; set; }
+    public DbSet<Affiliation> Affiliations { get; set; }
+    public DbSet<ModelSpecification> ModelSpecifications { get; set; }
+    public DbSet<SystemAirplane> Systems { get; set; }
 
     // config
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
