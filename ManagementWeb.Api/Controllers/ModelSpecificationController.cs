@@ -7,7 +7,7 @@ namespace ManagementWeb.Api.Controllers
 {
     [Route("[controller]")]
     [ApiController]
-    public class ModelSpeciificationController : ControllerBase
+    public class ModelSpecificationController : ControllerBase
     {
         [Authorize]
         [HttpGet]
