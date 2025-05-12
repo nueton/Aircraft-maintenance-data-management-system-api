@@ -36,10 +36,23 @@ namespace ManagementWeb.Api.Controllers
         {
             var user = await authService.RegisterUsername(request);
             if (user is null)
-                return BadRequest("Username is already exists.");
+                return BadRequest("Username or User ID is already exists.");
             return Ok(user);
         }
-
+        [HttpGet("checkUsername/{Username}")]
+        public async Task<IActionResult> CheckUsername(String Username, MyContext dbContext)
+        {
+            var user = await dbContext.Users.Where(c => c.Username == Username).FirstOrDefaultAsync();
+            if (user is not null)
+            {
+                if (user.ResetPassword == null || user.ResetPasswordExpiryTime < DateTime.Now)
+                {
+                    return Ok(false);
+                }
+                return Ok(true);
+            }
+            return Ok(false);
+        }
         [HttpPut("registerPassword")]
         //register password
         public async Task<ActionResult<User>> RegisterPassword(UserDto request, MyContext dbContext)
@@ -52,7 +65,7 @@ namespace ManagementWeb.Api.Controllers
             var userPassword = dbContext.Users.Where(c => c.Id == userid).Select(c => c.PasswordHash).FirstOrDefault();
             if (userPassword != "")
             {
-                return BadRequest("Username didn't need to register new password");
+                return BadRequest("Username has already registered new password");
             }
             var userdata = new PasswordDto();
             userdata.Id = userid;
@@ -64,30 +77,50 @@ namespace ManagementWeb.Api.Controllers
         [Authorize(Roles = "admin")]
         [HttpPut("resetPassword")]
         //reset password
-        public async Task<ActionResult<User>> resetPassword(string request, MyContext dbContext)
+        public async Task<ActionResult<User>> resetPassword(ResetDto request, MyContext dbContext)
         {
-            Guid userid = dbContext.Users.Where(c => c.Username == request).Select(c => c.Id).FirstOrDefault();
-            if (userid == Guid.Empty)
+            var user = await authService.ResetPassword(request);
+            if (user is null)
             {
-                return NotFound("Username isn't exists.");
+                return BadRequest("Username already reset Password");
             }
-            var userPassword = dbContext.Users.Where(c => c.Id == userid).Select(c => c.PasswordHash).FirstOrDefault();
-            if (userPassword == "")
-            {
-                return BadRequest("Username need to register new password before reset again");
-            }
-            var user = await authService.ResetPassword(userid);
             return Ok(user);
         }
 
         [HttpPost("login")]
         //login
-        public async Task<ActionResult<TokenResponseDto>> Login(UserDto request)
+        public async Task<ActionResult<TokenResponseDto>> Login(UserDto request, MyContext dbContext)
         {
-            var result = await authService.LoginAsync(request);
-            if (result is null)
-                return BadRequest("Invalid username or password.");
-            return Ok(result);
+            var check = dbContext.Users.Where(c => c.Username == request.Username).FirstOrDefault();
+            if (check is not null)
+            {
+                if (check.ResetPassword is not null)
+                {
+                    if (check.ResetPasswordExpiryTime < DateTime.Now)
+                    {
+                        return BadRequest("Please contact admin");
+                    }
+                    else
+                    {
+                        if (check.ResetPassword == request.Password)
+                        {
+                            return Ok(true);
+                        }
+                        else
+                        {
+                            return BadRequest("Invalid username or password");
+                        }
+                    }
+                }
+                else
+                {
+                    var result = await authService.LoginAsync(request);
+                    if (result is null)
+                        return BadRequest("Invalid username or password.");
+                    return Ok(result);
+                }
+            }
+            return BadRequest("Invalid username or password.");
         }
 
         [HttpPost("refresh-token")]
@@ -98,34 +131,56 @@ namespace ManagementWeb.Api.Controllers
                 return Unauthorized("Invalid refresh token.");
             return Ok(result);
         }
-        [Authorize]
-        [HttpGet("{id}")]
-        //save userid in task and repair, it need to get username with userid to show in detil report 
-        public async Task<IActionResult> getUsername(Guid id, MyContext dbContext)
-        {
-            var username = await dbContext.Users.Where(c => c.Id == id).Select(d => d.Username).ToListAsync();
-            return Ok(username);
-        }
         [HttpGet("refresh/{id}")]
         //get expiry time
         public async Task<IActionResult> getRefreshTime(Guid id, MyContext dbContext)
         {
-            var refreshTime = await dbContext.Users.Where(c => c.Id == id).Select(d => d.RefreshTokenExpiryTime).ToListAsync();
+            var refreshTime = await dbContext.Users.Where(c => c.Id == id).Select(d => d.RefreshTokenExpiryTime).FirstAsync();
             return Ok(refreshTime);
+        }
+        [Authorize(Roles = "admin")]
+        [HttpGet("{id}")]
+        //show user
+        public IActionResult getDetail(String id, MyContext dbContext)
+        {
+            User? user = dbContext.Users.Where(c => c.UserId == id).First();
+            return Ok(user);
+        }
+        [Authorize(Roles = "admin")]
+        [HttpGet("detail/{id}")]
+        //show user
+        public async Task<IActionResult> getDetailId(string id, MyContext dbContext)
+        {
+            List<string> allUsers = new List<string>();
+            var users = await dbContext.Users.Where(c => c.UserId == id).Select(c => new { c.CreateUserId, c.ResetPasswordId }).SingleAsync();
+            var admin = await dbContext.Users.Where(c => c.Id == users.CreateUserId).Select(c => new { c.Rank, c.Name, c.Surname }).SingleAsync();
+            allUsers.Add(admin.Rank + admin.Name + " " + admin.Surname);
+            if (users.ResetPasswordId != Guid.Empty)
+            {
+                var adminChange = await dbContext.Users.Where(c => c.Id == users.ResetPasswordId).Select(c => new { c.Rank, c.Name, c.Surname }).SingleAsync();
+                allUsers.Add(adminChange.Rank + adminChange.Name + " " + adminChange.Surname);
+                return Ok(allUsers);
+            }
+            allUsers.Add(string.Empty);
+            return Ok(allUsers);
         }
         [Authorize(Roles = "admin")]
         [HttpGet("allUser")]
         //show all user
         public async Task<IActionResult> getAllUser(MyContext dbContext)
         {
-            var user = await dbContext.Users.Select(d => new { Username = d.Username, Role = d.Role, PasswordHash = d.PasswordHash }).ToListAsync();
+            var user01 = await dbContext.Users.Where(c => c.Role == "user").Select(d => new { d.Id, d.Username, d.Role, d.PasswordHash, d.UserId, d.ResetPassword, d.ResetPasswordExpiryTime }).OrderBy(c => c.Username).ToListAsync();
+            var user02 = await dbContext.Users.Where(c => c.Role == "inspector").Select(d => new { d.Id, d.Username, d.Role, d.PasswordHash, d.UserId, d.ResetPassword, d.ResetPasswordExpiryTime }).OrderBy(c => c.Username).ToListAsync();
+            var user03 = await dbContext.Users.Where(c => c.Role == "admin").Select(d => new { d.Id, d.Username, d.Role, d.PasswordHash, d.UserId, d.ResetPassword, d.ResetPasswordExpiryTime }).OrderBy(c => c.Username).ToListAsync();
+            var user04 = await dbContext.Users.Where(c => c.Role == "supervisor").Select(d => new { d.Id, d.Username, d.Role, d.PasswordHash, d.UserId, d.ResetPassword, d.ResetPasswordExpiryTime }).OrderBy(c => c.Username).ToListAsync();
+            var user = user01.Concat(user02).Concat(user03).Concat(user04);
             return Ok(user);
         }
         [Authorize]
         [HttpGet("allInspector")]
         public async Task<IActionResult> getInspector(MyContext dbContext)
         {
-            var user = await dbContext.Users.Where(d => d.Role == "Inspector").Select(d => new { UserId = d.UserId, Rank = d.Rank, Name = d.Name, Surname = d.Surname }).OrderBy(d => d.Name).ToArrayAsync();
+            var user = await dbContext.Users.Where(d => d.Role == "Inspector").Select(d => new { UserId = d.UserId, Rank = d.Rank, Name = d.Name, Surname = d.Surname, Id = d.Id }).OrderBy(d => d.Name).ToArrayAsync();
             return Ok(user);
         }
         [Authorize]
@@ -141,6 +196,18 @@ namespace ManagementWeb.Api.Controllers
 
             var user = user01.Concat(user02).Concat(user03).Concat(user04).Concat(user05).Concat(user06).ToArray();
             return Ok(user);
+        }
+        [Authorize]
+        [HttpGet("fullName/{id}")]
+        public async Task<IActionResult> fullName(Guid id, MyContext dbContext)
+        {
+            var user = await dbContext.Users.Where(c => c.Id == id).Select(c => new { c.Rank, c.Name, c.Surname }).FirstOrDefaultAsync();
+            if (user is not null)
+            {
+                var fullName = user.Rank + user.Name + " " + user.Surname;
+                return Ok(fullName);
+            }
+            return NotFound();
         }
     }
 }

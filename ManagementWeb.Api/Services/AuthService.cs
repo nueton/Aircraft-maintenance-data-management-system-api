@@ -57,7 +57,7 @@ public class AuthService(MyContext context, IConfiguration configuration) : IAut
     }
     public async Task<User?> RegisterUsername(UsernameDto request)
     {
-        if (await context.Users.AnyAsync(u => u.Username == request.Username))
+        if (await context.Users.AnyAsync(u => u.Username == request.Username || u.UserId == request.UserId))
         {
             return null;
         }
@@ -65,12 +65,28 @@ public class AuthService(MyContext context, IConfiguration configuration) : IAut
         var user = new User();
         user.Username = request.Username;
         user.Role = request.Role;
+        user.Rank = request.Rank;
+        user.Name = request.Name;
+        user.Surname = request.Surname;
+        user.UserId = request.UserId;
+        user.CreateUserId = request.CreateUserId;
+        user.CreatedTime = DateTime.Now;
+        user.ResetPassword = RandomNumber();
+        user.ResetPasswordExpiryTime = DateTime.Now.AddDays(5);
 
         context.Users.Add(user);
         await context.SaveChangesAsync();
         return user;
 
     }
+    private string RandomNumber()
+    {
+        var randomNumber = new byte[8];
+        using var rng = RandomNumberGenerator.Create();
+        rng.GetBytes(randomNumber);
+        return Convert.ToBase64String(randomNumber);
+    }
+
     public async Task<User?> RegisterPassword(PasswordDto request)
     {
         User? user = context.Users.Find(request.Id);
@@ -78,17 +94,27 @@ public class AuthService(MyContext context, IConfiguration configuration) : IAut
         {
             var hashedPassword = new PasswordHasher<User>().HashPassword(user, request.Password);
             user.PasswordHash = hashedPassword;
+            user.ResetPassword = null;
+            user.ResetPasswordExpiryTime = null;
             await context.SaveChangesAsync();
             return user;
         }
         return null;
     }
-    public async Task<User?> ResetPassword(Guid request)
+    public async Task<User?> ResetPassword(ResetDto request)
     {
-        User? user = context.Users.Find(request);
+        User? user = context.Users.Find(request.Id);
         if (user is not null)
         {
+            if (user.PasswordHash is "" && user.ResetPassword != null && user.ResetPasswordExpiryTime > DateTime.Now)
+            {
+                return null;
+            }
             user.PasswordHash = "";
+            user.ResetPasswordId = request.ResetPasswordId;
+            user.ResetTime = DateTime.Now;
+            user.ResetPassword = RandomNumber();
+            user.ResetPasswordExpiryTime = DateTime.Now.AddDays(5);
             await context.SaveChangesAsync();
             return user;
         }
