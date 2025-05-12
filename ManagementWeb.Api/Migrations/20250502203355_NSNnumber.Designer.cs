@@ -4,6 +4,7 @@ using ManagementWeb.Api.Contexts;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace ManagementWeb.Api.Migrations
 {
     [DbContext(typeof(MyContext))]
-    partial class MyContextModelSnapshot : ModelSnapshot
+    [Migration("20250502203355_NSNnumber")]
+    partial class NSNnumber
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -163,7 +166,7 @@ namespace ManagementWeb.Api.Migrations
                     b.Property<Guid>("InspectorId")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<string>("JCN")
+                    b.Property<string>("JCH")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
@@ -200,12 +203,6 @@ namespace ManagementWeb.Api.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<Guid>("CreateUserId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<DateTime?>("CreatedTime")
-                        .HasColumnType("datetime2");
-
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -228,12 +225,6 @@ namespace ManagementWeb.Api.Migrations
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<DateTime?>("ResetPasswordExpiryTime")
-                        .HasColumnType("datetime2");
-
-                    b.Property<Guid>("ResetPasswordId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<DateTime?>("ResetTime")
                         .HasColumnType("datetime2");
 
                     b.Property<string>("Role")
