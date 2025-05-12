@@ -16,4 +16,8 @@ public class User
     public DateTime? RefreshTokenExpiryTime { get; set; }
     public string? ResetPassword { get; set; }
     public DateTime? ResetPasswordExpiryTime { get; set; }
+    public Guid CreateUserId { get; set; }
+    public DateTime? CreatedTime { get; set; }
+    public Guid ResetPasswordId { get; set; }
+    public DateTime? ResetTime { get; set; }
 }
