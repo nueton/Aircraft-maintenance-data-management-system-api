@@ -6,7 +6,9 @@ public class CreateRepairReport
 {
     public string DecommissionedSerial { get; set; } = "";
     public string DecommissionedParcel { get; set; } = "";
+    public string DecommissionedNationalSerialNumber { get; set; } = "";
     public string CommissionedSerial { get; set; } = "";
     public string CommissionedParcel { get; set; } = "";
+    public string CommissionedNationalSerialNumber { get; set; } = "";
     public int TaskReportId { get; set; }
 }
