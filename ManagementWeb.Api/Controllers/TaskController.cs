@@ -150,7 +150,7 @@ public class TaskController : ControllerBase
     //get task with user id
     public async Task<IActionResult> GetTaskWithId(Guid id, MyContext dbContext)
     {
-        var tasks = await dbContext.Tasks.Where(c => c.CreatedUserId == id).ToListAsync();
+        var tasks = await dbContext.Tasks.Where(c => c.CreatedUserId == id).ToArrayAsync();
         return Ok(tasks);
     }
 

@@ -51,6 +51,7 @@ app.UseHttpsRedirection();
 app.UseAuthorization();
 
 app.MapControllers();
+app.MapGet("/", () => "API is working externally!");
 
 // app.UseAuthentication();
 // app.UseAuthorization();
